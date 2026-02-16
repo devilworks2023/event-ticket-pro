@@ -18,6 +18,7 @@ export function LandingPage() {
               <span className="ml-2 text-xl font-bold text-primary">EventTicket Pro</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
+              <Link to="/events" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Buscar eventos</Link>
               <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Características</a>
               <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Precios</a>
               <Button onClick={login} size="sm">Iniciar Sesión</Button>
@@ -43,7 +44,9 @@ export function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" className="px-8 h-12 text-base" onClick={login}>Empezar Ahora</Button>
-            <Button size="lg" variant="outline" className="px-8 h-12 text-base">Ver Demo</Button>
+            <Button asChild size="lg" variant="outline" className="px-8 h-12 text-base">
+              <Link to="/events">Buscar eventos</Link>
+            </Button>
           </div>
 
           <div className="mt-20 relative max-w-5xl mx-auto">

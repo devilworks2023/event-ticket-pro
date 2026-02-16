@@ -39,10 +39,19 @@ export function PublicEventsPage() {
     fetchEvents()
   }, [])
 
-  const filteredEvents = events.filter(e => 
-    e.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    e.location.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const now = new Date()
+  const activeEvents = events.filter((e) => {
+    const eventDate = new Date(e.date)
+    if (Number.isNaN(eventDate.getTime())) return false
+    return eventDate.getTime() >= now.getTime()
+  })
+
+  const filteredEvents = activeEvents
+    .filter((e) =>
+      e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.location.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   return (
     <div className="min-h-screen bg-slate-50">

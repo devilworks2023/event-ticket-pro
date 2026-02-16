@@ -47,9 +47,76 @@ export function LandingPage() {
           </div>
 
           <div className="mt-20 relative max-w-5xl mx-auto">
-            <div className="aspect-[16/9] bg-slate-100 rounded-2xl shadow-2xl border overflow-hidden flex items-center justify-center text-muted-foreground">
-               {/* Mock Dashboard Image or Graphic */}
-               <BarChart3 className="w-20 h-20 opacity-20" />
+            <div className="aspect-[16/9] rounded-2xl shadow-2xl border overflow-hidden bg-gradient-to-br from-primary/10 via-white to-secondary">
+              <div className="h-full w-full p-6 sm:p-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-primary">Vista previa</p>
+                    <p className="text-lg font-bold text-foreground">Dashboard de ventas</p>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border bg-white/80 px-3 py-1 text-xs text-muted-foreground">
+                    <BarChart3 className="h-4 w-4 text-primary" />
+                    Últimas 24h
+                  </div>
+                </div>
+
+                <div className="mt-6 grid grid-cols-3 gap-3">
+                  <div className="rounded-xl border bg-white/80 p-3">
+                    <p className="text-[11px] text-muted-foreground">Ingresos</p>
+                    <p className="mt-1 text-lg font-bold text-foreground">€12.480</p>
+                  </div>
+                  <div className="rounded-xl border bg-white/80 p-3">
+                    <p className="text-[11px] text-muted-foreground">Entradas</p>
+                    <p className="mt-1 text-lg font-bold text-foreground">1.340</p>
+                  </div>
+                  <div className="rounded-xl border bg-white/80 p-3">
+                    <p className="text-[11px] text-muted-foreground">Vendedores</p>
+                    <p className="mt-1 text-lg font-bold text-foreground">18</p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-[1.2fr_0.8fr] gap-3 h-[calc(100%-132px)]">
+                  <div className="rounded-xl border bg-white/70 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-foreground">Ventas por hora</p>
+                      <p className="text-xs text-muted-foreground">Hoy</p>
+                    </div>
+                    <div className="h-full flex items-end gap-2">
+                      {[40, 55, 30, 70, 60, 85, 50, 95, 65, 80].map((h, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 rounded-md bg-primary/20"
+                          style={{ height: `${h}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border bg-white/70 p-4">
+                    <p className="text-xs font-semibold text-foreground mb-3">Demografía</p>
+                    <div className="space-y-3">
+                      {[
+                        { label: '18–24', value: 34 },
+                        { label: '25–34', value: 46 },
+                        { label: '35+', value: 20 },
+                      ].map((row) => (
+                        <div key={row.label}>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">{row.label}</span>
+                            <span className="text-foreground font-medium">{row.value}%</span>
+                          </div>
+                          <div className="mt-1 h-2 rounded-full bg-muted">
+                            <div
+                              className="h-2 rounded-full bg-primary/40"
+                              style={{ width: `${row.value}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -169,9 +236,9 @@ export function LandingPage() {
           </div>
           <p className="text-sm text-muted-foreground">© 2024 EventTicket Pro. Todos los derechos reservados.</p>
           <div className="flex gap-6">
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary">Privacidad</a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary">Términos</a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary">Soporte</a>
+            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary">Privacidad</Link>
+            <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary">Términos</Link>
+            <Link to="/support" className="text-sm text-muted-foreground hover:text-primary">Soporte</Link>
           </div>
         </div>
       </footer>

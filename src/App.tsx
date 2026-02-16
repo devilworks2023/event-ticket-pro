@@ -14,6 +14,9 @@ import { AdminPromotersPage } from './pages/admin-promoters-page'
 import { EventDetailsPage } from './pages/event-details-page'
 import { CheckoutPage } from './pages/checkout-page'
 import { SuccessPage } from './pages/success-page'
+import { PrivacyPage } from './pages/privacy-page'
+import { TermsPage } from './pages/terms-page'
+import { SupportPage } from './pages/support-page'
 import { blink } from './lib/blink'
 import { useEffect, useState } from 'react'
 
@@ -85,6 +88,9 @@ export default function App() {
         <Route path="/events/:id" element={<EventDetailsPage />} />
         <Route path="/checkout/:id" element={<CheckoutPage />} />
         <Route path="/success" element={<SuccessPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/support" element={<SupportPage />} />
 
         {/* Protected Dashboard Routes */}
         <Route 

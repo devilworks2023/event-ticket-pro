@@ -11,6 +11,7 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
+import { BackButton } from '../components/navigation/back-button'
 
 type BillingModel = 'commission' | 'subscription'
 
@@ -163,11 +164,13 @@ export function AdminPromotersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Promotores</h2>
-          <p className="text-muted-foreground">Crea y configura promotores que gestionan sus propios eventos y vendedores.</p>
+        <div className="flex items-start gap-3">
+          <BackButton to="/dashboard" label="Volver" />
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Promotores</h2>
+            <p className="text-muted-foreground">Crea y configura promotores que gestionan sus propios eventos y vendedores.</p>
+          </div>
         </div>
-
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button className="shadow-elegant">

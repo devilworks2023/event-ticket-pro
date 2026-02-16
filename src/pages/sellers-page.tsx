@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Users, UserPlus, TrendingUp, DollarSign, ExternalLink, Shield, Edit, Trash2 } from 'lucide-react'
 import { Button } from '../components/ui/button'
+import { BackButton } from '../components/navigation/back-button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { 
   Dialog, 
@@ -233,9 +234,12 @@ export function SellersPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Vendedores y Afiliados</h2>
-          <p className="text-muted-foreground">Gestiona tu red de ventas y configura comisiones.</p>
+        <div className="flex items-start gap-3">
+          <BackButton to="/dashboard" label="Volver" />
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Vendedores y Afiliados</h2>
+            <p className="text-muted-foreground">Gestiona tu red de ventas y configura comisiones.</p>
+          </div>
         </div>
 
         {canAdmin ? (

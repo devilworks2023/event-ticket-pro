@@ -90,10 +90,15 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Ajustes</h2>
-        <p className="text-muted-foreground">Configura tu perfil y el modelo de monetización.</p>
-      </div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <BackButton to="/dashboard" label="Volver" />
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Ajustes</h2>
+            <p className="text-muted-foreground">Configura tu perfil y el modelo de monetización.</p>
+          </div>
+        </div>
+       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="rounded-2xl">

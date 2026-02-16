@@ -71,13 +71,18 @@ export function AccessControlPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 py-8">
-      <div className="text-center">
-        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4">
-           <Scan size={32} />
+      <div className="flex items-start justify-between">
+        <BackButton to="/dashboard" label="Volver" />
+        <div className="flex-1 text-center">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4">
+            <Scan size={32} />
+          </div>
+          <h2 className="text-3xl font-bold">Control de Acceso</h2>
+          <p className="text-muted-foreground">Escanea el código QR o introduce el código manualmente para validar la entrada.</p>
         </div>
-        <h2 className="text-3xl font-bold">Control de Acceso</h2>
-        <p className="text-muted-foreground">Escanea el código QR o introduce el código manualmente para validar la entrada.</p>
+        <div className="w-10" />
       </div>
+
 
       <Card className="rounded-2xl shadow-lg border-none">
         <CardContent className="p-8">

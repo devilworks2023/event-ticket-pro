@@ -64,9 +64,17 @@ export function PublicEventsPage() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="flex items-center mb-8">
-             <Ticket className="h-6 w-6 mr-2" />
-             <span className="font-bold text-lg">EventTicket Pro</span>
+          <div className="flex items-center justify-between gap-4 mb-8">
+            <div className="flex items-center">
+              <Ticket className="h-6 w-6 mr-2" />
+              <span className="font-bold text-lg">EventTicket Pro</span>
+            </div>
+            <BackButton
+              to="/"
+              label="Volver"
+              variant="ghost"
+              className="text-white/90 hover:text-white hover:bg-white/10 border border-white/15"
+            />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-6">Encuentra tu próximo evento</h1>
           <div className="max-w-2xl relative">

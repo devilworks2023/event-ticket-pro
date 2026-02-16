@@ -18,6 +18,7 @@ import { blink } from '../lib/blink'
 import { toast } from 'react-hot-toast'
 import { Users, MapPin, TrendingUp, PieChart as PieChartIcon } from 'lucide-react'
 import { useAuth } from '../hooks/use-auth'
+import { BackButton } from '../components/navigation/back-button'
 
 interface SaleData {
   demographicAge: number
@@ -75,9 +76,14 @@ export function SalesAnalyticsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Seguimiento de Ventas</h2>
-        <p className="text-muted-foreground">Analíticas detalladas por demografía y geografía.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <BackButton to="/dashboard" label="Volver" />
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Seguimiento de Ventas</h2>
+            <p className="text-muted-foreground">Analíticas detalladas por demografía y geografía.</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

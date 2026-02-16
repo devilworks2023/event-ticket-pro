@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: event_ticket_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-event_ticket_pro}
+      POSTGRES_USER: ${POSTGRES_USER:-event_ticket}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: event_ticket_api
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-event_ticket}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-event_ticket_pro}}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+
+  web:
+    build: .
+    container_name: event_ticket_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres_data:

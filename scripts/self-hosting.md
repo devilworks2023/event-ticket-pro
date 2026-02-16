@@ -19,6 +19,8 @@ Vite necesita estas variables en build-time:
 Crea un archivo `.env.local` en el servidor (o en tu pipeline de CI) antes de compilar.
 
 ## Opción A — Docker (recomendado)
+
+### A1) Solo frontend (usa Blink como backend)
 ```bash
 git clone <tu-repo>
 cd <tu-repo>
@@ -29,6 +31,26 @@ docker compose up -d --build
 
 # App: http://TU_SERVIDOR:8080
 ```
+
+### A2) Frontend + Backend (B) + PostgreSQL (Ubuntu 24.04 / IONOS)
+> Esto levanta **Postgres** + una **API mínima** (ruta `/health`) + el frontend.
+
+```bash
+cp .env.example .env
+# IMPORTANTE: cambia POSTGRES_PASSWORD
+
+docker compose -f docker-compose.full.yml up -d --build
+
+# Web:  http://TU_SERVIDOR:8080
+# API:  http://TU_SERVIDOR:3001/health
+# DB:   postgres://... en 5432
+```
+
+Para crear tablas: ejecuta `scripts/postgres-schema.sql` dentro del contenedor:
+```bash
+docker exec -i event_ticket_postgres psql -U $POSTGRES_USER -d $POSTGRES_DB < scripts/postgres-schema.sql
+```
+
 
 ## Opción B — Sin Docker (Bun)
 ```bash

@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, content-type',
 }
 
-type Action = 'list' | 'linkPromoterByEmail'
+type Action = 'list' | 'linkPromoterByEmail' | 'update' | 'delete'
 
 type RequestBody =
   | { action: 'list' }
@@ -18,6 +18,16 @@ type RequestBody =
         platformCommissionPct: number
       }
     }
+  | {
+      action: 'update'
+      linkId: string
+      status?: string
+      settings?: {
+        billingModel?: 'commission' | 'subscription'
+        platformCommissionPct?: number
+      }
+    }
+  | { action: 'delete'; linkId: string }
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -141,6 +151,67 @@ async function handler(req: Request): Promise<Response> {
         })
       }
 
+      return json({ ok: true })
+    }
+
+    if (action === 'update') {
+      if (!body.linkId) return json({ error: 'linkId es requerido' }, 400)
+
+      const links = await blink.db.table<any>('admin_promoters').list({
+        where: { AND: [{ id: body.linkId }, { adminUserId: auth.userId }] },
+        limit: 1,
+      })
+      if (links.length === 0) return json({ error: 'Not found' }, 404)
+
+      const link = links[0]
+
+      if (typeof body.status === 'string') {
+        await blink.db.table<any>('admin_promoters').update(link.id, {
+          status: body.status,
+        })
+      }
+
+      if (body.settings) {
+        const settingsExisting = await blink.db.table<any>('promoter_settings').list({
+          where: { promoterUserId: link.promoterUserId },
+          limit: 1,
+        })
+
+        const patch: Record<string, any> = {
+          updatedAt: new Date().toISOString(),
+        }
+
+        if (body.settings.billingModel) patch.billingModel = body.settings.billingModel
+        if (typeof body.settings.platformCommissionPct === 'number') {
+          patch.platformCommissionPct = String(body.settings.platformCommissionPct)
+        }
+
+        if (settingsExisting.length === 0) {
+          await blink.db.table<any>('promoter_settings').create({
+            promoterUserId: link.promoterUserId,
+            billingModel: patch.billingModel || 'commission',
+            platformCommissionPct: patch.platformCommissionPct || '0',
+            subscriptionStatus: 'inactive',
+            userId: link.promoterUserId,
+          })
+        } else {
+          await blink.db.table<any>('promoter_settings').update(settingsExisting[0].id, patch)
+        }
+      }
+
+      return json({ ok: true })
+    }
+
+    if (action === 'delete') {
+      if (!body.linkId) return json({ error: 'linkId es requerido' }, 400)
+
+      const links = await blink.db.table<any>('admin_promoters').list({
+        where: { AND: [{ id: body.linkId }, { adminUserId: auth.userId }] },
+        limit: 1,
+      })
+      if (links.length === 0) return json({ error: 'Not found' }, 404)
+
+      await blink.db.table<any>('admin_promoters').delete(body.linkId)
       return json({ ok: true })
     }
 

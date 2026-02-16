@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Users, UserPlus, TrendingUp, DollarSign, ExternalLink, Shield } from 'lucide-react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Users, UserPlus, TrendingUp, DollarSign, ExternalLink, Shield, Edit, Trash2 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { 
@@ -18,6 +18,8 @@ import { toast } from 'react-hot-toast'
 import { Badge } from '../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { CommissionTiersDialog } from '../components/commission-tiers-dialog'
+import { isAdmin } from '../lib/roles'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 
 interface Seller {
   id: string
@@ -26,6 +28,13 @@ interface Seller {
   status: string
   totalSales?: number
   commissionEarned?: number
+}
+
+type AdminPromoterRow = {
+  id: string
+  promoterUserId: string
+  promoterEmail: string
+  status: string
 }
 
 
@@ -38,14 +47,50 @@ export function SellersPage() {
   const [tiersOpen, setTiersOpen] = useState(false)
   const [selectedSeller, setSelectedSeller] = useState<{ id: string; name: string } | null>(null)
 
+  const [editOpen, setEditOpen] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editStatus, setEditStatus] = useState<'pending' | 'active'>('pending')
+
+  const [promoters, setPromoters] = useState<AdminPromoterRow[]>([])
+  const [selectedPromoterUserId, setSelectedPromoterUserId] = useState<string>('')
+
+  const canAdmin = useMemo(() => isAdmin(user), [user])
+
+  const fetchPromotersIfAdmin = async () => {
+    if (!canAdmin || !user) return
+    try {
+      const result = await blink.functions.invoke('admin-promoters', {
+        body: { action: 'list' },
+      })
+      const rows = ((result as any)?.promoters || []) as AdminPromoterRow[]
+      setPromoters(rows)
+      if (!selectedPromoterUserId && rows.length > 0) {
+        setSelectedPromoterUserId(rows[0].promoterUserId)
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Error al cargar promotores')
+    }
+  }
+
   const fetchSellers = async () => {
     try {
       if (!user) return
-      const data = await blink.db.sellers.list({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' },
-      })
-      setSellers(data as Seller[])
+      if (canAdmin) {
+        if (!selectedPromoterUserId) {
+          setSellers([])
+          return
+        }
+        const result = await blink.functions.invoke('admin-sellers', {
+          body: { action: 'list', promoterUserId: selectedPromoterUserId },
+        })
+        setSellers(((result as any)?.sellers || []) as Seller[])
+      } else {
+        const data = await blink.db.sellers.list({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' },
+        })
+        setSellers(data as Seller[])
+      }
     } catch (error) {
       toast.error('Error al cargar vendedores')
     } finally {
@@ -54,14 +99,97 @@ export function SellersPage() {
   }
 
   useEffect(() => {
-    if (user) fetchSellers()
-  }, [user])
+    if (!user) return
+    setLoading(true)
+    if (canAdmin) {
+      fetchPromotersIfAdmin().finally(() => {
+        // sellers are fetched in next effect once selectedPromoterUserId exists
+      })
+    } else {
+      fetchSellers()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, canAdmin])
+
+  useEffect(() => {
+    if (!user) return
+    if (!canAdmin) return
+    setLoading(true)
+    fetchSellers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPromoterUserId, canAdmin, user?.id])
+
+  const openEdit = (seller: Seller) => {
+    setSelectedSeller({ id: seller.id, name: seller.name })
+    setEditName(seller.name || '')
+    setEditStatus((seller.status as any) === 'active' ? 'active' : 'pending')
+    setEditOpen(true)
+  }
+
+  const saveEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedSeller) return
+    try {
+      if (canAdmin) {
+        if (!selectedPromoterUserId) {
+          toast.error('Selecciona un promotor')
+          return
+        }
+        await blink.functions.invoke('admin-sellers', {
+          body: {
+            action: 'update',
+            promoterUserId: selectedPromoterUserId,
+            sellerId: selectedSeller.id,
+            patch: { name: editName.trim(), status: editStatus },
+          },
+        })
+      } else {
+        await blink.db.sellers.update(selectedSeller.id, {
+          name: editName.trim(),
+          status: editStatus,
+        })
+      }
+
+      toast.success('Vendedor actualizado')
+      setEditOpen(false)
+      await fetchSellers()
+    } catch (e: any) {
+      toast.error(e?.message || 'No se pudo actualizar el vendedor')
+    }
+  }
+
+  const deleteSeller = async (sellerId: string) => {
+    if (!confirm('¿Eliminar este vendedor?')) return
+    try {
+      // Optimistic
+      setSellers((prev) => prev.filter((s) => s.id !== sellerId))
+
+      if (canAdmin) {
+        if (!selectedPromoterUserId) throw new Error('Selecciona un promotor')
+        await blink.functions.invoke('admin-sellers', {
+          body: { action: 'delete', promoterUserId: selectedPromoterUserId, sellerId },
+        })
+      } else {
+        await blink.db.sellers.delete(sellerId)
+      }
+
+      toast.success('Vendedor eliminado')
+    } catch (e: any) {
+      toast.error(e?.message || 'No se pudo eliminar')
+      await fetchSellers()
+    }
+  }
 
   const handleInviteSeller = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inviteEmail || !user) return
 
     try {
+      if (canAdmin) {
+        toast.error('Invita vendedores desde la cuenta del promotor (por ahora).')
+        return
+      }
+
       const email = inviteEmail.trim().toLowerCase()
       const name = email.split('@')[0]
 
@@ -109,6 +237,24 @@ export function SellersPage() {
           <h2 className="text-2xl font-bold tracking-tight">Vendedores y Afiliados</h2>
           <p className="text-muted-foreground">Gestiona tu red de ventas y configura comisiones.</p>
         </div>
+
+        {canAdmin ? (
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block text-sm text-muted-foreground">Promotor</div>
+            <Select value={selectedPromoterUserId} onValueChange={setSelectedPromoterUserId}>
+              <SelectTrigger className="w-[320px]">
+                <SelectValue placeholder="Selecciona un promotor" />
+              </SelectTrigger>
+              <SelectContent>
+                {promoters.map((p) => (
+                  <SelectItem key={p.id} value={p.promoterUserId}>
+                    {p.promoterEmail}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
         <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
           <DialogTrigger asChild>
             <Button className="shadow-elegant">
@@ -140,6 +286,7 @@ export function SellersPage() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -235,7 +382,13 @@ export function SellersPage() {
                       >
                         <Shield className="mr-2 h-4 w-4" /> Tramos
                       </Button>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(seller)}>
+                        <Edit className="mr-2 h-4 w-4" /> Editar
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteSeller(seller.id)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                      </Button>
+                      <Button variant="ghost" size="icon" aria-label="Abrir">
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -247,13 +400,42 @@ export function SellersPage() {
         </CardContent>
       </Card>
 
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar vendedor</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={saveEdit} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Nombre</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Estado</Label>
+              <Select value={editStatus} onValueChange={(v) => setEditStatus(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pendiente</SelectItem>
+                  <SelectItem value="active">Activo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="w-full">Guardar cambios</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {user && selectedSeller && (
         <CommissionTiersDialog
           open={tiersOpen}
           onOpenChange={setTiersOpen}
           sellerId={selectedSeller.id}
           sellerName={selectedSeller.name}
-          ownerUserId={user.id}
+          ownerUserId={canAdmin ? selectedPromoterUserId : user.id}
         />
       )}
     </div>

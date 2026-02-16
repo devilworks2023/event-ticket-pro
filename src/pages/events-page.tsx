@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Calendar as CalendarIcon, MapPin, MoreVertical, Edit, Trash2, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Plus, Calendar as CalendarIcon, MapPin, MoreVertical, Edit, Trash2, ExternalLink } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { 
@@ -37,6 +38,7 @@ interface Event {
 
 export function EventsPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -102,9 +104,14 @@ export function EventsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
+        <div className="flex items-start gap-3">
+          <Button variant="outline" size="icon" className="mt-0.5" onClick={() => navigate(-1)} aria-label="Volver">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
           <h2 className="text-2xl font-bold tracking-tight">Mis Eventos</h2>
           <p className="text-muted-foreground">Gestiona tus eventos y tipos de entrada.</p>
+          </div>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>

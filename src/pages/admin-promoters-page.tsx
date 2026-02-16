@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Plus, Settings2, Users } from 'lucide-react'
+import { Edit, Plus, Settings2, Trash2, Users } from 'lucide-react'
 import { useAuth } from '../hooks/use-auth'
 import { blink } from '../lib/blink'
 import { isAdmin } from '../lib/roles'
@@ -34,6 +34,12 @@ export function AdminPromotersPage() {
   const [promoterEmail, setPromoterEmail] = useState('')
   const [billingModel, setBillingModel] = useState<BillingModel>('commission')
   const [platformCommissionPct, setPlatformCommissionPct] = useState('3')
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [editing, setEditing] = useState<AdminPromoterRow | null>(null)
+  const [editStatus, setEditStatus] = useState('active')
+  const [editBillingModel, setEditBillingModel] = useState<BillingModel>('commission')
+  const [editPlatformCommissionPct, setEditPlatformCommissionPct] = useState('3')
 
   const canSee = useMemo(() => isAdmin(user), [user])
 
@@ -84,6 +90,60 @@ export function AdminPromotersPage() {
       await load()
     } catch (e: any) {
       toast.error(e?.message || 'No se pudo vincular el promotor')
+    }
+  }
+
+  const openEdit = (row: AdminPromoterRow) => {
+    setEditing(row)
+    setEditStatus(row.status || 'active')
+    setEditBillingModel((row.billingModel || 'commission') as BillingModel)
+    setEditPlatformCommissionPct(String(row.platformCommissionPct ?? 0))
+    setEditOpen(true)
+  }
+
+  const saveEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editing) return
+    try {
+      const pct = Number(editPlatformCommissionPct)
+      if (Number.isNaN(pct) || pct < 0) {
+        toast.error('La comisión debe ser un número válido')
+        return
+      }
+
+      await blink.functions.invoke('admin-promoters', {
+        body: {
+          action: 'update',
+          linkId: editing.id,
+          status: editStatus,
+          settings: {
+            billingModel: editBillingModel,
+            platformCommissionPct: pct,
+          },
+        },
+      })
+
+      toast.success('Promotor actualizado')
+      setEditOpen(false)
+      setEditing(null)
+      await load()
+    } catch (e: any) {
+      toast.error(e?.message || 'No se pudo actualizar el promotor')
+    }
+  }
+
+  const deleteLink = async (row: AdminPromoterRow) => {
+    if (!confirm('¿Eliminar este promotor de tu lista?')) return
+    try {
+      // Optimistic
+      setRows((prev) => prev.filter((r) => r.id !== row.id))
+      await blink.functions.invoke('admin-promoters', {
+        body: { action: 'delete', linkId: row.id },
+      })
+      toast.success('Promotor eliminado')
+    } catch (e: any) {
+      toast.error(e?.message || 'No se pudo eliminar el promotor')
+      await load()
     }
   }
 
@@ -185,6 +245,7 @@ export function AdminPromotersPage() {
                   <TableHead>Modelo</TableHead>
                   <TableHead>Comisión plataforma</TableHead>
                   <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -199,6 +260,14 @@ export function AdminPromotersPage() {
                     <TableCell className="capitalize">{p.billingModel || 'commission'}</TableCell>
                     <TableCell>{Number(p.platformCommissionPct || 0).toFixed(2)}%</TableCell>
                     <TableCell className="capitalize">{p.status}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
+                        <Edit className="mr-2 h-4 w-4" /> Editar
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteLink(p)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -206,6 +275,52 @@ export function AdminPromotersPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar promotor</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={saveEdit} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Estado</Label>
+              <Select value={editStatus} onValueChange={setEditStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Activo</SelectItem>
+                  <SelectItem value="inactive">Inactivo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Modelo</Label>
+                <Select value={editBillingModel} onValueChange={(v) => setEditBillingModel(v as BillingModel)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="commission">Comisión por venta</SelectItem>
+                    <SelectItem value="subscription">Suscripción mensual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Comisión plataforma (%)</Label>
+                <Input value={editPlatformCommissionPct} onChange={(e) => setEditPlatformCommissionPct(e.target.value)} inputMode="decimal" />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="submit" className="w-full">Guardar cambios</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

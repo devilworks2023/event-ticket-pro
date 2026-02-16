@@ -2,6 +2,10 @@
 
 Este proyecto es un **frontend Vite (SPA)** que usa Blink como backend (Auth/DB/Functions). Puedes alojarlo en tu servidor como estático (Nginx/Caddy) o con Docker.
 
+## VPS IONOS (Ubuntu 24.04)
+Si vas a desplegar en un VPS de IONOS con Ubuntu 24.04, usa la guía paso a paso (Docker + UFW + dominio + HTTPS):
+- `scripts/ionos-ubuntu-24-setup.md`
+
 ## Requisitos
 - Git
 - Docker + Docker Compose (recomendado) **o** Node/Bun

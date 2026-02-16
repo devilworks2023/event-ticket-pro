@@ -110,8 +110,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {navItems.find(item => item.href === location.pathname)?.name || 'Dashboard'}
           </h1>
           <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm">Ver Sitio Público</Button>
-            <Button size="sm">Crear Evento</Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/events" target="_blank" rel="noreferrer">Ver Sitio Público</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/dashboard/events">Crear Evento</Link>
+            </Button>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-8">

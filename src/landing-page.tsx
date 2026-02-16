@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from './hooks/use-auth'
 import { Button } from './components/ui/button'
 import { Ticket, ShieldCheck, Zap, BarChart3, Users, Globe } from 'lucide-react'

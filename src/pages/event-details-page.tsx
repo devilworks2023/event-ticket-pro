@@ -4,8 +4,8 @@ import { Calendar, MapPin, Ticket, Bus, ShieldCheck, ChevronRight } from 'lucide
 import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { blink } from '../lib/blink'
 import { toast } from 'react-hot-toast'
+import { FUNCTION_URLS } from '../lib/function-urls'
 
 interface Event {
   id: string
@@ -38,14 +38,17 @@ export function EventDetailsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const eventData = await blink.db.events.get(id!)
-        if (!eventData) throw new Error('Not found')
-        setEvent(eventData as Event)
+        const url = new URL(FUNCTION_URLS.publicEventDetails)
+        url.searchParams.set('id', id || '')
 
-        const ticketsData = await blink.db.ticketTypes.list({
-          where: { eventId: id }
-        })
-        setTicketTypes(ticketsData as TicketType[])
+        const res = await fetch(url.toString(), { method: 'GET' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+        const body = (await res.json()) as { event?: Event; ticketTypes?: TicketType[] }
+        if (!body.event) throw new Error('Not found')
+
+        setEvent(body.event)
+        setTicketTypes(body.ticketTypes || [])
       } catch (error) {
         toast.error('Evento no encontrado')
         navigate('/events')

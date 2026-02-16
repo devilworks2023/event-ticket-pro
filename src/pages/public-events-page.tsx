@@ -4,8 +4,8 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { blink } from '../lib/blink'
 import { Link } from 'react-router-dom'
+import { FUNCTION_URLS } from '../lib/function-urls'
 
 interface Event {
   id: string
@@ -24,18 +24,19 @@ export function PublicEventsPage() {
 
   useEffect(() => {
     const fetchEvents = async () => {
+      setLoading(true)
       try {
-        const data = await blink.db.events.list({
-          where: { status: 'published' },
-          orderBy: { date: 'asc' }
-        })
-        setEvents(data as Event[])
+        const res = await fetch(FUNCTION_URLS.publicEvents, { method: 'GET' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const body = (await res.json()) as { events?: Event[] }
+        setEvents(body.events || [])
       } catch (error) {
         console.error('Error fetching events:', error)
       } finally {
         setLoading(false)
       }
     }
+
     fetchEvents()
   }, [])
 

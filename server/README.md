@@ -8,16 +8,25 @@ Incluye un **instalador** para inicializar el esquema en PostgreSQL.
 
 - `scripts/self-hosting.md` (incluye instalador web `/setup`, reverse proxy y HTTPS)
 
-## Ejecutar con Docker Compose (dev rápido)
+## Ejecutar con Docker Compose (producción local / VPS)
 
 ```bash
 cp .env.example .env
 # IMPORTANTE: cambia POSTGRES_PASSWORD
 
-# OJO: usa docker-compose.full.yml (incluye api + postgres)
+# Recomendado: web + api + postgres
 docker compose -f docker-compose.full.yml up -d --build
 
-curl http://localhost:3001/health
+curl -s http://localhost:3001/health
+# → {"ok":true,"db":true}
+```
+
+### Logs útiles
+
+```bash
+docker ps
+
+docker compose -f docker-compose.full.yml logs -f --tail=200 api
 ```
 
 ## Instalador (setup)

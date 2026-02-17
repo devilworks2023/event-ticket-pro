@@ -2,8 +2,10 @@
 FROM oven/bun:1 AS build
 WORKDIR /app
 
-COPY bun.lock package.json ./
-RUN bun install --frozen-lockfile
+# Nota: en algunos despliegues el lockfile puede no estar presente.
+# Para evitar fallos de build, instalamos sin requerir bun.lock.
+COPY package.json ./
+RUN bun install
 
 COPY . .
 RUN bun run build

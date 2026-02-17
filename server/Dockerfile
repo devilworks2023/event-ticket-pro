@@ -2,8 +2,10 @@ FROM oven/bun:1 AS deps
 WORKDIR /app
 
 # Install deps (uses root package.json)
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+# Nota: en algunos despliegues (p.ej. pull parcial), el lockfile puede no estar presente.
+# Para evitar fallos de build, instalamos sin requerir bun.lock.
+COPY package.json ./
+RUN bun install
 
 FROM oven/bun:1 AS runner
 WORKDIR /app

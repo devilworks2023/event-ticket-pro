@@ -14,6 +14,7 @@ Incluye un **instalador** para inicializar el esquema en PostgreSQL.
 cp .env.example .env
 # IMPORTANTE: cambia POSTGRES_PASSWORD
 
+# OJO: usa docker-compose.full.yml (incluye api + postgres)
 docker compose -f docker-compose.full.yml up -d --build
 
 curl http://localhost:3001/health

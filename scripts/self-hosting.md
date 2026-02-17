@@ -153,7 +153,11 @@ Guardar en nano:
 
 ## 4) Arrancar la app (API + DB + Web)
 
-Ejecuta:
+**Importante**: este repo tiene 2 archivos de compose:
+- `docker-compose.yml` → **solo web** (frontend)
+- `docker-compose.full.yml` → **web + api + postgres** (recomendado)
+
+Ejecuta (modo recomendado):
 ```bash
 docker compose -f docker-compose.full.yml up -d --build
 ```
@@ -164,6 +168,16 @@ Esto puede tardar 2–5 min la primera vez.
 
 ```bash
 curl -s http://localhost:3001/health
+```
+
+Si te sale:
+- `curl: (7) Failed to connect...` → la API **no está levantada**. Casi siempre es porque ejecutaste el compose equivocado (usa el de arriba con `-f docker-compose.full.yml`).
+
+Para ver contenedores y logs:
+```bash
+docker ps
+
+docker compose -f docker-compose.full.yml logs -f --tail=200 api
 ```
 
 Deberías ver algo como:
@@ -211,9 +225,24 @@ sudo apt -y install caddy
 sudo nano /etc/caddy/Caddyfile
 ```
 
-Pega (cambia `TU_DOMINIO` por tu dominio real, por ejemplo `tickets.midominio.com` o `midominio.com`):
+Pega (cambia `TU_DOMINIO` por tu dominio real).
+
+Ejemplo con tu caso (sin www):
 ```caddy
-TU_DOMINIO {
+tickets.devil-works.com {
+  # API como /api
+  handle_path /api/* {
+    reverse_proxy 127.0.0.1:3001
+  }
+
+  # Web
+  reverse_proxy 127.0.0.1:8080
+}
+```
+
+Ejemplo si quieres **usar www también** (recomendado):
+```caddy
+tickets.devil-works.com, www.tickets.devil-works.com {
   # API como /api
   handle_path /api/* {
     reverse_proxy 127.0.0.1:3001

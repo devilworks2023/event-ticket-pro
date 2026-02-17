@@ -1,10 +1,14 @@
 # Backend (API) + PostgreSQL
 
-Este backend es un esqueleto mínimo para auto-hosting (Ubuntu 24.04 / IONOS).
+Este backend es un esqueleto mínimo para auto-hosting (Ubuntu 24.04).
 
 Incluye un **instalador** para inicializar el esquema en PostgreSQL.
 
-## Ejecutar con Docker Compose
+## Guía completa (Ubuntu 24.04 desde cero)
+
+- `scripts/self-hosting.md` (incluye instalador web `/setup`, reverse proxy y HTTPS)
+
+## Ejecutar con Docker Compose (dev rápido)
 
 ```bash
 cp .env.example .env
@@ -42,5 +46,6 @@ curl -X POST http://localhost:3001/setup/run \
 ```
 
 ## Recomendado: reverse proxy para /api
-Para evitar puertos en producción, expón la API como `/api` con Nginx/Caddy:
-- ejemplo completo en `scripts/self-hosting.md`
+
+Para evitar puertos en producción, expón la API como `/api` con Caddy o Nginx.
+Detalles y ejemplos completos: `scripts/self-hosting.md`.

@@ -17,6 +17,7 @@ import { SuccessPage } from './pages/success-page'
 import { PrivacyPage } from './pages/privacy-page'
 import { TermsPage } from './pages/terms-page'
 import { SupportPage } from './pages/support-page'
+import { SetupPage } from './pages/setup-page'
 import { blink } from './lib/blink'
 import { useEffect, useState } from 'react'
 

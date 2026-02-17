@@ -1,8 +1,15 @@
 import Fastify from 'fastify'
+import cors from '@fastify/cors'
 import { getEnv } from './env'
 import { getPool } from './db'
+import { registerSetupRoutes } from './routes/setup'
 
 const app = Fastify({ logger: true })
+
+await app.register(cors, {
+  origin: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+})
 
 app.get('/health', async () => {
   const pool = getPool()
@@ -16,6 +23,8 @@ app.get('/v1/version', async () => {
     runtime: 'bun',
   }
 })
+
+await registerSetupRoutes(app)
 
 async function main() {
   const env = getEnv()

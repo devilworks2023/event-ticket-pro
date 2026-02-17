@@ -11,6 +11,7 @@ ENV NODE_ENV=production
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY server ./server
+COPY scripts ./scripts
 COPY package.json ./package.json
 
 EXPOSE 3001

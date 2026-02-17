@@ -46,11 +46,19 @@ docker compose -f docker-compose.full.yml up -d --build
 # DB:   postgres://... en 5432
 ```
 
-Para crear tablas: ejecuta `scripts/postgres-schema.sql` dentro del contenedor:
-```bash
-docker exec -i event_ticket_postgres psql -U $POSTGRES_USER -d $POSTGRES_DB < scripts/postgres-schema.sql
-```
+### Inicializar DB (instalador)
 
+Opción 1 (recomendado): abre el instalador web:
+- `http://TU_SERVIDOR:8080/setup`
+
+Opción 2 (por terminal):
+```bash
+curl http://TU_SERVIDOR:3001/setup/status
+
+curl -X POST http://TU_SERVIDOR:3001/setup/run \
+  -H 'content-type: application/json' \
+  -d '{"adminEmail":"admin@example.com","adminDisplayName":"Admin","adminPassword":"change-me"}'
+```
 
 ## Opción B — Sin Docker (Bun)
 ```bash

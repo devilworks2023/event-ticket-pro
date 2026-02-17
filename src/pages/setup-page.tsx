@@ -23,8 +23,16 @@ async function safeJson(res: Response) {
 
 export function SetupPage() {
   const defaultApiUrl = useMemo(() => {
-    // If web+api are behind same domain, allow relative proxy (/api)
-    return `${window.location.protocol}//${window.location.hostname}:3001`
+    // Prefer a same-origin reverse proxy if you configured it (e.g. Nginx/Caddy mapping /api -> :3001)
+    // Otherwise, use the common docker-compose port mapping (:3001)
+    const likelyProxy = `${window.location.origin}/api`
+    const likelyPort = `${window.location.protocol}//${window.location.hostname}:3001`
+
+    // If running in dev (Vite), the API is usually on :3001
+    if (window.location.port === '5173') return likelyPort
+
+    // In production, many deployments proxy /api. Default to :3001 to work out-of-the-box with docker-compose.full.yml
+    return likelyPort
   }, [])
 
   const [apiUrl, setApiUrl] = useState(defaultApiUrl)
@@ -95,9 +103,28 @@ export function SetupPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>URL de la API</Label>
-                <Input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="http://localhost:3001" />
+                <Input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="http://localhost:3001 o https://tu-dominio.com/api" />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setApiUrl(`${window.location.origin}/api`)}
+                  >
+                    Usar /api
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setApiUrl(`${window.location.protocol}//${window.location.hostname}:3001`)}
+                  >
+                    Usar :3001
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  En Docker Compose suele ser <code>http://localhost:3001</code>.
+                  Si tienes un reverse proxy (Nginx/Caddy), lo típico es <code>{window.location.origin}/api</code>. Con Docker Compose,
+                  por defecto suele ser <code>{window.location.protocol}//{window.location.hostname}:3001</code>.
                 </p>
               </div>
               <Button variant="outline" onClick={() => checkStatus(apiUrl)} disabled={checking}>

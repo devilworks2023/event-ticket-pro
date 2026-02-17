@@ -10,6 +10,17 @@ Si vas a desplegar en un VPS de IONOS con Ubuntu 24.04, usa la guía paso a paso
 - Git
 - Docker + Docker Compose (recomendado) **o** Node/Bun
 
+## Qué significa “instalar desde el frontend tipo WordPress”
+En WordPress, el instalador puede **crear tablas** y **generar configuración** desde el navegador.
+
+Aquí hay 2 piezas:
+1) **Backend + DB (self-hosted opcional)**: incluye un instalador web en `/setup` que inicializa Postgres y (opcionalmente) crea un admin.
+2) **Frontend Vite**: las variables `VITE_*` se inyectan **en el build** (no se pueden “guardar” desde el navegador sin un backend propio).
+
+➡️ En práctica:
+- Primero levantas contenedores/servicios.
+- Luego abres `https://TU_DOMINIO/setup` y ejecutas el instalador.
+
 ## Variables de entorno (obligatorio)
 Vite necesita estas variables en build-time:
 
@@ -33,7 +44,7 @@ docker compose up -d --build
 ```
 
 ### A2) Frontend + Backend (B) + PostgreSQL (Ubuntu 24.04 / IONOS)
-> Esto levanta **Postgres** + una **API mínima** (ruta `/health`) + el frontend.
+> Esto levanta **Postgres** + una **API mínima** + el frontend.
 
 ```bash
 cp .env.example .env
@@ -60,6 +71,56 @@ curl -X POST http://TU_SERVIDOR:3001/setup/run \
   -d '{"adminEmail":"admin@example.com","adminDisplayName":"Admin","adminPassword":"change-me"}'
 ```
 
+## (Recomendado) Quitar el puerto de la API con reverse proxy (/api)
+Si quieres “experiencia WordPress” (un único dominio sin puertos), configura un reverse proxy:
+
+### Nginx (ejemplo)
+Sirve el frontend (dist) y proxyea la API como `/api`:
+
+```nginx
+server {
+  listen 80;
+  server_name TU_DOMINIO;
+
+  root /var/www/event-ticket-pro/dist;
+  index index.html;
+
+  # SPA fallback
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+
+  # API → contenedor/servicio en :3001
+  location /api/ {
+    proxy_pass http://127.0.0.1:3001/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+```
+
+Con esto:
+- Instalador: `https://TU_DOMINIO/setup`
+- API status: `https://TU_DOMINIO/api/setup/status`
+
+### Caddy (ejemplo)
+```caddy
+TU_DOMINIO {
+  root * /var/www/event-ticket-pro/dist
+  file_server
+
+  # SPA fallback
+  try_files {path} /index.html
+
+  handle_path /api/* {
+    reverse_proxy 127.0.0.1:3001
+  }
+}
+```
+
 ## Opción B — Sin Docker (Bun)
 ```bash
 bun install
@@ -73,6 +134,3 @@ bun run build
 git pull
 docker compose up -d --build
 ```
-
-## Nota sobre “instalador desde frontend”
-En Vite, las credenciales (`VITE_*`) se inyectan en el build. Por eso el "setup" real es **configurar `.env.local` y recompilar**. Si quieres, puedo añadir un panel /setup para validar configuración y mostrar checks (pero no puede escribir env vars del servidor desde el navegador).

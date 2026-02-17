@@ -8,6 +8,7 @@ import { Switch } from '../components/ui/switch'
 import { useAuth } from '../hooks/use-auth'
 import { blink } from '../lib/blink'
 import { toast } from 'react-hot-toast'
+import { BackButton } from '../components/navigation/back-button'
 
 type BillingModel = 'commission' | 'subscription'
 

@@ -7,6 +7,7 @@ import { blink } from '../lib/blink'
 import { toast } from 'react-hot-toast'
 import { Badge } from '../components/ui/badge'
 import { useAuth } from '../hooks/use-auth'
+import { BackButton } from '../components/navigation/back-button'
 
 interface SaleRecord {
   id: string

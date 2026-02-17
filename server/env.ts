@@ -1,6 +1,14 @@
 import dotenv from 'dotenv'
 
-dotenv.config({ path: process.env.DOTENV_PATH || '.env' })
+// En Docker/producción solemos pasar variables vía `environment:` (docker compose / orquestador).
+// Cargar `.env` en ese caso puede confundir ("injecting env (0)") y no aporta valor.
+if (process.env.DOTENV_PATH || process.env.NODE_ENV !== 'production') {
+  dotenv.config({
+    path: process.env.DOTENV_PATH || '.env',
+    // Nunca sobreescribir variables ya presentes (p.ej. inyectadas por Docker)
+    override: false,
+  })
+}
 
 type Env = {
   PORT: number

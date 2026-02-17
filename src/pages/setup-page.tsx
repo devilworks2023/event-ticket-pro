@@ -74,7 +74,7 @@ export function SetupPage() {
       })
 
       const data = (await safeJson(res)) as RunResponse
-      if (!data.ok) throw new Error(data.error)
+      if (data.ok === false) throw new Error(data.error)
 
       toast.success('Base de datos inicializada')
       setInitialized(true)
@@ -135,7 +135,7 @@ export function SetupPage() {
                 <p className="font-medium">Estado</p>
                 {checking ? (
                   <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-                    <Spinner size="sm" />
+                    <Spinner className="size-4" />
                     <span>Consultando…</span>
                   </div>
                 ) : initialized === null ? (

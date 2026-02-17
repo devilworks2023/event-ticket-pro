@@ -13,7 +13,10 @@ export function CheckoutPage() {
   const { id } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { selectedTickets, includeTransport, total } = location.state || { selectedTickets: {}, includeTransport: false, total: 0 }
+  const state = (location.state as any) || { selectedTickets: {}, includeTransport: false, total: 0 }
+  const selectedTickets = (state.selectedTickets || {}) as Record<string, number>
+  const includeTransport = Boolean(state.includeTransport)
+  const total = Number(state.total || 0)
 
   const [email, setEmail] = useState('')
   const [city, setCity] = useState('')
@@ -183,7 +186,7 @@ export function CheckoutPage() {
                 <div className="space-y-4">
                    <div className="flex justify-between text-white/80">
                       <span>Total Entradas</span>
-                      <span className="font-bold">€{(total - (includeTransport ? (Object.values(selectedTickets).reduce((a,b)=>a+b,0) * 15) : 0)).toFixed(2)}</span>
+                      <span className="font-bold">€{(total - (includeTransport ? (Object.values(selectedTickets).reduce((a, b) => Number(a) + Number(b), 0) * 15) : 0)).toFixed(2)}</span>
                    </div>
                    {includeTransport && (
                      <div className="flex justify-between text-white/80">

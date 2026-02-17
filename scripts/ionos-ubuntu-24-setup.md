@@ -108,7 +108,7 @@ EOF
 
 ### 5.3 Opción A (simple): exponer puerto 8080
 ```bash
-docker compose up -d --build
+docker compose up -d --build --remove-orphans
 # App: http://TU_SERVIDOR:8080
 ```
 
@@ -128,7 +128,7 @@ EOF
 
 2) Usa el compose con Caddy (ver sección “docker-compose (con caddy)” abajo):
 ```bash
-docker compose up -d --build
+docker compose up -d --build --remove-orphans
 ```
 
 ---
@@ -172,7 +172,7 @@ cd event-ticket-pro
 
 git pull
 
-docker compose up -d --build
+docker compose up -d --build --remove-orphans
 ```
 
 ---

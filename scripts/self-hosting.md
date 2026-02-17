@@ -159,7 +159,7 @@ Guardar en nano:
 
 Ejecuta (modo recomendado):
 ```bash
-docker compose -f docker-compose.full.yml up -d --build
+docker compose -f docker-compose.full.yml up -d --build --remove-orphans
 ```
 
 Esto puede tardar 2–5 min la primera vez.
@@ -287,7 +287,7 @@ cd ~/event-ticket-pro
 
 git pull
 
-docker compose -f docker-compose.full.yml up -d --build
+docker compose -f docker-compose.full.yml up -d --build --remove-orphans
 ```
 
 ---

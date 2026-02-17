@@ -20,7 +20,7 @@ docker compose up -d --build
 cp .env.example .env
 # IMPORTANTE: cambia POSTGRES_PASSWORD y (si aplica) DATABASE_URL
 
-docker compose -f docker-compose.full.yml up -d --build
+docker compose -f docker-compose.full.yml up -d --build --remove-orphans
 
 curl -s http://localhost:3001/health
 # → {"ok":true,"db":true}

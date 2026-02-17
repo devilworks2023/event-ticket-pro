@@ -1,38 +1,63 @@
-# Self-hosting (VPS / servidor propio)
+# Self-hosting (VPS / servidor propio) — Guía paso a paso (Ubuntu limpio)
 
-Este repo puede funcionar de 2 formas:
+Esta guía está escrita para alguien que **no programa**. Copia/pega los comandos tal cual.
 
-- **Modo 1 (simple): Solo frontend** (Vite SPA) y usas Blink (Auth/DB/Functions) como backend.
-- **Modo 2 (tipo “WordPress installer”): Frontend + API + PostgreSQL** en tu servidor. Incluye un instalador web en **`/setup`** para inicializar el esquema y (opcionalmente) crear un admin.
+## Resumen (qué vamos a conseguir)
 
-> Nota importante: en Vite, las variables `VITE_*` se inyectan **en el build**. El instalador web inicializa la **DB del backend**, pero no puede “guardar” variables del frontend sin un backend adicional.
+Al final tendrás:
+- Tu web en: `https://TU_DOMINIO/`
+- El instalador en: `https://TU_DOMINIO/setup`
+- La API en: `https://TU_DOMINIO/api/health`
+
+**Recomendado**: despliegue con **Docker Compose** (más fácil de mantener) + **Caddy** (HTTPS automático).
 
 ---
 
-## 0) Qué vas a necesitar
+## Antes de empezar (2 cosas IMPORTANTES)
 
-- Un VPS con **Ubuntu 24.04 limpio**
-- Un dominio (recomendado) apuntando al VPS (A/AAAA)
-- Acceso SSH como usuario con sudo
+1) **Necesitas un dominio** apuntando a tu servidor
+- En tu proveedor de dominio (IONOS/Cloudflare/etc.), crea un registro **A**:
+  - Nombre: `@` (o vacío)
+  - Valor: `LA_IP_DE_TU_SERVIDOR`
+- (Opcional) otro A para `www` apuntando a la misma IP.
 
-Puertos recomendados:
-- 22 (SSH)
-- 80/443 (HTTP/HTTPS)
-- (opcional) 8080 / 3001 / 5432 si quieres acceder directo sin proxy (no recomendado en prod)
+2) **Entra por SSH**
+- En Windows puedes usar *PuTTY* o *Windows Terminal*.
+- En Mac/Linux: Terminal.
+
+Ejemplo:
+```bash
+ssh TU_USUARIO@TU_IP
+```
+
+---
+
+## 0) Qué modo de self-hosting vas a usar
+
+Este repo puede funcionar de 2 formas:
+
+- **Modo 1 (solo frontend)**: subes la web y sigues usando Blink (Auth/DB/Functions) como backend.
+- **Modo 2 (recomendado para servidor propio “todo en uno”)**: web + API + PostgreSQL en tu servidor. Incluye instalador web en **`/setup`**.
+
+En esta guía haremos **Modo 2**.
+
+> Nota (importante pero simple): el instalador `/setup` crea la **base de datos del servidor**. El frontend sigue necesitando sus variables `VITE_*` en el build.
 
 ---
 
 ## 1) Preparar el servidor (Ubuntu 24.04 desde cero)
 
-### 1.1 Actualizar sistema
+### 1.1 Actualizar Ubuntu e instalar herramientas
 
+Copia/pega:
 ```bash
 sudo apt update && sudo apt -y upgrade
-sudo apt -y install ca-certificates curl git ufw
+sudo apt -y install ca-certificates curl git ufw nano
 ```
 
-### 1.2 Firewall (UFW)
+### 1.2 Activar firewall (UFW)
 
+Copia/pega:
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw allow 80/tcp
@@ -41,12 +66,12 @@ sudo ufw --force enable
 sudo ufw status
 ```
 
-### 1.3 Instalar Docker + Compose
+Si ves `Status: active` está bien.
 
-Ubuntu 24.04 ya trae paquetes, pero lo más estable suele ser Docker Engine (repo oficial):
+### 1.3 Instalar Docker + Docker Compose
 
+Copia/pega **tal cual**:
 ```bash
-# Repo oficial Docker
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/keyrings/docker.asc >/dev/null
 sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -58,98 +83,109 @@ echo \
 
 sudo apt update
 sudo apt -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
 sudo systemctl enable --now docker
 ```
 
-Opcional: usar Docker sin sudo (relogin necesario):
-
-```bash
-sudo usermod -aG docker $USER
-# cierra sesión y vuelve a entrar por SSH
-```
-
-Comprueba:
-
+Verificación:
 ```bash
 docker --version
 docker compose version
 ```
 
----
-
-## 2) Desplegar el proyecto (recomendado: Modo 2 con instalador)
-
-### 2.1 Clonar el repo
+### 1.4 (Opcional, recomendado) Usar Docker sin escribir sudo
 
 ```bash
-cd ~
-# si usas GitHub:
-# git clone https://github.com/devilworks2023/event-ticket-pro.git
-# cd event-ticket-pro
-
-git clone <TU_REPO>
-cd <CARPETA_DEL_REPO>
+sudo usermod -aG docker $USER
 ```
 
-### 2.2 Crear variables del backend (Postgres)
+Luego **cierra la sesión SSH y vuelve a entrar**.
 
-El compose “full” usa `.env` para Postgres/API.
+---
+
+## 2) Descargar la app (clonar el repo)
+
+Ve a tu carpeta “home” y clona:
+```bash
+cd ~
+
+git clone https://github.com/devilworks2023/event-ticket-pro.git
+cd event-ticket-pro
+```
+
+Si tu repo es privado y te pide contraseña, dímelo y te guío para crear una *Deploy Key* o usar token.
+
+---
+
+## 3) Configurar variables (muy importante)
+
+Aquí hay 2 archivos distintos:
+- `.env` → lo usa **Postgres + API** (Docker Compose)
+- `.env.local` → lo usa el **frontend Vite** (se “mete” en el build)
+
+### 3.1 Backend: `.env`
 
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-Cambia al menos:
-- `POSTGRES_PASSWORD` (obligatorio)
-- opcionalmente `POSTGRES_DB`, `POSTGRES_USER`
+Cambia como mínimo:
+- `POSTGRES_PASSWORD=` → pon una contraseña larga (guárdala)
 
-### 2.3 Variables del frontend (Blink)
+### 3.2 Frontend: `.env.local`
 
-Crea `.env.local` para el build del frontend (Vite):
-
+Crea el archivo:
 ```bash
 nano .env.local
 ```
 
-Contenido (ejemplo):
-
+Pega esto (ya lo dejo listo con tu proyecto):
 ```bash
 VITE_BLINK_PROJECT_ID=event-ticket-app-ympgl1kq
 VITE_BLINK_PUBLISHABLE_KEY=blnk_pk_vcRA1MB0Q3Q99vOyByYAYTm_TpSVSjko
 ```
 
-> Si tu frontend seguirá usando Blink para Auth/DB/Functions, estas 2 variables son obligatorias.
+Guardar en nano:
+- Ctrl+O, Enter
+- Ctrl+X
 
-### 2.4 Levantar contenedores (API + Postgres + Web)
+---
 
+## 4) Arrancar la app (API + DB + Web)
+
+Ejecuta:
 ```bash
 docker compose -f docker-compose.full.yml up -d --build
 ```
 
-Comprobar:
+Esto puede tardar 2–5 min la primera vez.
+
+### 4.1 Comprobar que la API está viva
 
 ```bash
 curl -s http://localhost:3001/health
 ```
 
-### 2.5 Ejecutar el instalador web (tipo WordPress)
+Deberías ver algo como:
+```json
+{"ok":true,"db":true}
+```
 
-Si no tienes reverse proxy todavía, abre en el navegador:
+### 4.2 Abrir el instalador /setup
 
+Sin HTTPS todavía, prueba en tu navegador:
 - `http://TU_IP:8080/setup`
 
-En la pantalla:
-1) En “URL de la API” usa `http://TU_IP:3001` (o `http://localhost:3001` si estás dentro del VPS con túnel)
-2) Pulsa **Comprobar estado**
-3) Rellena el admin (opcional) y pulsa **Inicializar base de datos**
+Dentro de “URL de la API” usa:
+- `http://TU_IP:3001`
 
-Alternativa por terminal:
+Pulsa:
+1) **Comprobar estado**
+2) **Inicializar base de datos**
 
+> Alternativa por terminal (si no puedes abrir navegador):
 ```bash
 curl http://localhost:3001/setup/status
-
 curl -X POST http://localhost:3001/setup/run \
   -H 'content-type: application/json' \
   -d '{"adminEmail":"admin@tu-dominio.com","adminDisplayName":"Admin","adminPassword":"cambia-esto"}'
@@ -157,18 +193,9 @@ curl -X POST http://localhost:3001/setup/run \
 
 ---
 
-## 3) Ponerlo “como WordPress” (un solo dominio con HTTPS)
+## 5) Poner dominio + HTTPS (recomendado: Caddy)
 
-Objetivo:
-- Web: `https://TU_DOMINIO/`
-- Instalador: `https://TU_DOMINIO/setup`
-- API: `https://TU_DOMINIO/api/...` (sin puertos)
-
-Hay dos formas:
-
-### Opción 3A (rápida y profesional): Caddy como reverse proxy (recomendado)
-
-1) Instala Caddy:
+### 5.1 Instalar Caddy
 
 ```bash
 sudo apt -y install debian-keyring debian-archive-keyring apt-transport-https
@@ -178,75 +205,93 @@ sudo apt update
 sudo apt -y install caddy
 ```
 
-2) Crea `/etc/caddy/Caddyfile`:
+### 5.2 Crear el Caddyfile (cambia TU_DOMINIO)
 
+```bash
+sudo nano /etc/caddy/Caddyfile
+```
+
+Pega (cambia `TU_DOMINIO` por tu dominio real, por ejemplo `tickets.midominio.com` o `midominio.com`):
 ```caddy
 TU_DOMINIO {
-  # Web (contenedor nginx del servicio web en :8080)
-  reverse_proxy 127.0.0.1:8080
-
-  # API como /api (contenedor api en :3001)
+  # API como /api
   handle_path /api/* {
     reverse_proxy 127.0.0.1:3001
   }
+
+  # Web
+  reverse_proxy 127.0.0.1:8080
 }
 ```
 
-3) Reinicia Caddy:
-
+Recarga Caddy:
 ```bash
 sudo systemctl reload caddy
 ```
 
-Caddy te gestionará HTTPS automáticamente (Let’s Encrypt).
+### 5.3 Verificación final
 
-En el instalador (`/setup`), pon la API URL como:
+En tu navegador:
+- `https://TU_DOMINIO/`
+- `https://TU_DOMINIO/setup`
+- `https://TU_DOMINIO/api/health`
+
+En el instalador (`/setup`), la **URL de la API** ya debe ser:
 - `https://TU_DOMINIO/api`
-
-### Opción 3B: Nginx + Certbot
-
-Si prefieres Nginx, necesitas configurar server block + Certbot. Si me dices tu dominio, te dejo el `server {}` exacto para tu caso.
 
 ---
 
-## 4) Operación diaria
+## 6) Uso diario (mantenimiento)
 
-### Logs
+### Ver logs (si algo falla)
 
 ```bash
+cd ~/event-ticket-pro
+
 docker compose -f docker-compose.full.yml logs -f --tail=200
 ```
 
-### Actualizar versión
+### Actualizar a la última versión del repo
 
 ```bash
+cd ~/event-ticket-pro
+
 git pull
-docker compose -f docker-compose.full.yml up -d --build
-```
 
-### Reiniciar
-
-```bash
-docker compose -f docker-compose.full.yml restart
-```
-
-### Reset completo (borra DB)
-
-⚠️ Esto borra toda la DB Postgres.
-
-```bash
-docker compose -f docker-compose.full.yml down
-# elimina el volumen
-docker volume rm postgres_data
-# vuelve a levantar y repite /setup
 docker compose -f docker-compose.full.yml up -d --build
 ```
 
 ---
 
-## 5) Checklist de verificación rápida
+## 7) Problemas típicos (soluciones rápidas)
 
-- `https://TU_DOMINIO/` carga el frontend
-- `https://TU_DOMINIO/setup` abre el instalador
-- `https://TU_DOMINIO/api/health` responde `{ ok: true, ... }`
-- En el instalador, “Estado: Inicializado”
+### A) El dominio no carga / HTTPS no se activa
+- Espera 5–30 min (DNS)
+- Asegúrate de que el dominio apunta a la IP correcta (registro A)
+- Revisa logs de Caddy:
+```bash
+sudo journalctl -u caddy -n 200 --no-pager
+```
+
+### B) `http://TU_IP:8080` no abre
+- Revisa que el contenedor web está corriendo:
+```bash
+docker ps
+```
+
+### C) La API da `db:false`
+- Significa que Postgres no está listo o la contraseña no coincide.
+- Revisa logs:
+```bash
+docker compose -f docker-compose.full.yml logs -f postgres api --tail=200
+```
+
+---
+
+## 8) Checklist (si me dices estos 5 datos, te lo dejo perfecto)
+
+1) Tu dominio (ej: `midominio.com` o `tickets.midominio.com`)
+2) La IP del servidor
+3) Si el repo es público o privado
+4) Si quieres usar `www` o no
+5) Si `curl http://localhost:3001/health` te da `db:true`

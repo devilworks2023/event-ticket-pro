@@ -11,10 +11,13 @@ COPY . .
 RUN bun run build
 
 # Runtime stage
-FROM nginx:alpine
+# Avoid nginx to reduce Docker Hub pulls (and TLS handshake timeouts on some servers)
+FROM oven/bun:1 AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
 
-# SPA routing
-RUN printf "server {\n  listen 80;\n  server_name _;\n  root /usr/share/nginx/html;\n  index index.html;\n\n  location / {\n    try_files $uri $uri/ /index.html;\n  }\n}\n" > /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist ./dist
+COPY scripts/static-web-server.ts ./static-web-server.ts
 
-COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
+CMD ["bun", "static-web-server.ts"]

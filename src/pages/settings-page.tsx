@@ -13,7 +13,7 @@ import { BackButton } from '../components/navigation/back-button'
 type BillingModel = 'commission' | 'subscription'
 
 export function SettingsPage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading, login } = useAuth()
   const [loading, setLoading] = useState(true)
 
   const [displayName, setDisplayName] = useState('')
@@ -27,7 +27,15 @@ export function SettingsPage() {
 
   useEffect(() => {
     const load = async () => {
-      if (!user) return
+      // Mientras auth está cargando, mantenemos el skeleton.
+      if (authLoading) return
+
+      // Si no hay usuario (no logueado), no intentamos cargar ajustes de DB.
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
       try {
         setDisplayName(user.displayName || '')
         setContactEmail(user.email || '')
@@ -57,7 +65,7 @@ export function SettingsPage() {
     }
 
     load()
-  }, [user])
+  }, [user, authLoading])
 
   const saveProfile = async () => {
     try {
@@ -85,8 +93,18 @@ export function SettingsPage() {
     }
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return <div className="text-sm text-muted-foreground">Cargando ajustes...</div>
+  }
+
+  if (!user) {
+    return (
+      <div className="space-y-3">
+        <h2 className="text-2xl font-bold tracking-tight">Ajustes</h2>
+        <p className="text-sm text-muted-foreground">Inicia sesión para gestionar tus ajustes.</p>
+        <Button onClick={() => login()} className="shadow-elegant">Iniciar sesión</Button>
+      </div>
+    )
   }
 
   return (

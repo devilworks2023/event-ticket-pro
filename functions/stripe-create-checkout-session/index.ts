@@ -39,7 +39,15 @@ async function handler(req: Request): Promise<Response> {
     const projectId = Deno.env.get("BLINK_PROJECT_ID");
     const blinkSecretKey = Deno.env.get("BLINK_SECRET_KEY");
 
-    if (!stripeSecretKey) return json({ error: "Missing STRIPE_SECRET_KEY" }, 500);
+    if (!stripeSecretKey) {
+      return json(
+        {
+          error: "Missing STRIPE_SECRET_KEY",
+          hint: "Añade STRIPE_SECRET_KEY en Secrets y redeploy de la función stripe-create-checkout-session.",
+        },
+        500
+      );
+    }
     if (!projectId || !blinkSecretKey) return json({ error: "Missing Blink config" }, 500);
 
     const body = (await req.json()) as CreateCheckoutBody;
@@ -102,7 +110,9 @@ async function handler(req: Request): Promise<Response> {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      // Habilita wallets (Apple Pay / Google Pay) cuando estén disponibles para el merchant.
+      // Requisitos típicos: dominio verificado en Stripe + HTTPS + configuración de wallets.
+      automatic_payment_methods: { enabled: true },
       customer_email: body.buyerEmail,
       allow_promotion_codes: true,
       success_url: `${body.successUrl}?session_id={CHECKOUT_SESSION_ID}`,
